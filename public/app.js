@@ -1,6 +1,8 @@
 function dashboard() {
   const STORAGE_KEY = 'transcricao_form_v1';
   const FAVORITES_KEY = 'transcricao_lang_favorites_v1';
+  const NOTIFICATIONS_KEY = 'transcricao_notifications_v1';
+  const NOTIFICATIONS_MAX = 50;
 
   const defaultForm = {
     title: '',
@@ -37,6 +39,27 @@ function dashboard() {
     }
   }
 
+  function loadNotifications() {
+    try {
+      const raw = localStorage.getItem(NOTIFICATIONS_KEY);
+      if (!raw) return [];
+      const list = JSON.parse(raw);
+      return Array.isArray(list) ? list : [];
+    } catch (_e) {
+      return [];
+    }
+  }
+
+  function saveNotifications(list) {
+    try {
+      localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(list.slice(0, NOTIFICATIONS_MAX)));
+    } catch (_e) {}
+  }
+
+  function makeId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
   // Helper: remove acentos para busca tolerante
   function normalize(s) {
     return String(s || '')
@@ -63,6 +86,13 @@ function dashboard() {
     favorites: loadFavorites(),
     languageSearch: '',
     langOpen: false,
+
+    // Notificações persistentes (sininho)
+    notifications: loadNotifications(),
+    notificationsOpen: false,
+
+    // Toasts efêmeros (canto inferior direito)
+    toasts: [],
 
     form: loadSavedForm(),
 
@@ -215,6 +245,7 @@ function dashboard() {
       try {
         const res = await fetch('/api/health');
         const data = await res.json();
+        const wasOk = this.health?.ok;
         this.health = {
           checked: true,
           ok: data.ok && data.python_ok && data.whisperx_ok,
@@ -231,8 +262,42 @@ function dashboard() {
           this.form.device = 'cpu';
           this.form.compute_type = 'int8';
         }
+
+        // Notifica problemas no ambiente
+        if (!this.health.ok) {
+          const missing = [];
+          if (!this.health.python_ok) missing.push('Python');
+          if (!this.health.whisperx_ok) missing.push('WhisperX');
+          if (!this.health.ffmpeg_ok) missing.push('FFmpeg');
+          this.notify({
+            key: 'health-warning',
+            type: 'warning',
+            title: 'Ambiente não está totalmente pronto',
+            message: missing.length > 0
+              ? `Faltando: ${missing.join(', ')}. Rode "npm run setup" no terminal para corrigir.`
+              : (this.health.message || 'Verifique o terminal.'),
+            action: { label: 'Verificar novamente', type: 'recheck_health' },
+            duration: 8000,
+          });
+        } else if (wasOk === false) {
+          // Era ruim, agora ficou OK
+          this.notify({
+            key: 'health-ok',
+            type: 'success',
+            title: 'Ambiente pronto',
+            message: 'Python, WhisperX e FFmpeg estão funcionando.',
+            duration: 4000,
+          });
+        }
       } catch (err) {
         this.health = { checked: true, ok: false, message: err.message, cuda_available: false };
+        this.notify({
+          key: 'health-error',
+          type: 'error',
+          title: 'Erro ao verificar ambiente',
+          message: err.message,
+          duration: 6000,
+        });
       }
     },
 
@@ -317,6 +382,142 @@ function dashboard() {
       try {
         localStorage.setItem(FAVORITES_KEY, JSON.stringify(this.favorites));
       } catch (_e) {}
+    },
+
+    // ====================================================
+    //  NOTIFICAÇÕES (sininho) + TOASTS (flutuantes)
+    // ====================================================
+
+    get notificationsCount() {
+      return this.notifications.filter((n) => !n.read).length;
+    },
+
+    get hasUnread() {
+      return this.notificationsCount > 0;
+    },
+
+    /**
+     * Adiciona uma notificação. Mostra um toast efêmero E guarda no histórico do sininho.
+     *
+     * notif = {
+     *   id?: string,
+     *   key?: string,         // se passar, evita duplicar a mesma notificação
+     *   type: 'success' | 'warning' | 'error' | 'info',
+     *   title: string,
+     *   message?: string,
+     *   action?: { label, type, payload },
+     *   persistent?: boolean, // se true, vai pro sininho
+     *   toast?: boolean,      // se true, mostra toast efêmero (default true)
+     *   duration?: number,    // tempo do toast em ms (default 5000, 0 = não some)
+     * }
+     */
+    notify(notif) {
+      const opts = {
+        type: 'info',
+        toast: true,
+        persistent: true,
+        duration: 5000,
+        ...notif,
+      };
+
+      const item = {
+        id: opts.id || makeId(),
+        key: opts.key || null,
+        type: opts.type,
+        title: opts.title,
+        message: opts.message || '',
+        action: opts.action || null,
+        timestamp: Date.now(),
+        read: false,
+      };
+
+      // Guarda no histórico (sininho)
+      if (opts.persistent) {
+        if (item.key) {
+          // Remove duplicata anterior com mesma key
+          this.notifications = this.notifications.filter((n) => n.key !== item.key);
+        }
+        this.notifications.unshift(item);
+        if (this.notifications.length > NOTIFICATIONS_MAX) {
+          this.notifications = this.notifications.slice(0, NOTIFICATIONS_MAX);
+        }
+        saveNotifications(this.notifications);
+      }
+
+      // Toast efêmero
+      if (opts.toast) {
+        this.toasts.push({ ...item });
+        if (opts.duration > 0) {
+          setTimeout(() => this.dismissToast(item.id), opts.duration);
+        }
+      }
+
+      return item.id;
+    },
+
+    dismissToast(id) {
+      this.toasts = this.toasts.filter((t) => t.id !== id);
+    },
+
+    dismissNotification(id) {
+      this.notifications = this.notifications.filter((n) => n.id !== id);
+      saveNotifications(this.notifications);
+    },
+
+    markRead(id) {
+      const n = this.notifications.find((x) => x.id === id);
+      if (n) {
+        n.read = true;
+        saveNotifications(this.notifications);
+      }
+    },
+
+    markAllRead() {
+      this.notifications.forEach((n) => { n.read = true; });
+      saveNotifications(this.notifications);
+    },
+
+    clearNotifications() {
+      this.notifications = [];
+      saveNotifications(this.notifications);
+    },
+
+    toggleNotifications() {
+      this.notificationsOpen = !this.notificationsOpen;
+      if (this.notificationsOpen) {
+        // Marca tudo como lido ao abrir o painel (depois de 1s pra não sumir o badge na hora)
+        setTimeout(() => {
+          if (this.notificationsOpen) this.markAllRead();
+        }, 1000);
+      }
+    },
+
+    runNotificationAction(item) {
+      if (!item.action) return;
+      const { type, payload } = item.action;
+      if (type === 'recheck_health') {
+        this.checkHealth();
+      } else if (type === 'open_url' && payload) {
+        window.open(payload, '_blank');
+      } else if (type === 'scroll_to' && payload) {
+        const el = document.querySelector(payload);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+
+    formatRelativeTime(ts) {
+      const diff = Date.now() - ts;
+      const sec = Math.floor(diff / 1000);
+      if (sec < 30) return 'agora mesmo';
+      if (sec < 60) return `há ${sec}s`;
+      const min = Math.floor(sec / 60);
+      if (min < 60) return `há ${min}min`;
+      const h = Math.floor(min / 60);
+      if (h < 24) return `há ${h}h`;
+      const d = Math.floor(h / 24);
+      if (d < 7) return `há ${d}d`;
+      const date = new Date(ts);
+      return date.toLocaleDateString('pt-BR');
     },
 
     handleFile(file) {
@@ -471,7 +672,33 @@ function dashboard() {
       try {
         const res = await fetch('/api/jobs?limit=100');
         const data = await res.json();
-        this.jobs = data.rows || [];
+        const previousJobs = this.jobs || [];
+        const newJobs = data.rows || [];
+
+        // Detecta jobs que mudaram para done/error desde o último load
+        if (previousJobs.length > 0) {
+          newJobs.forEach((nj) => {
+            const prev = previousJobs.find((p) => p.id === nj.id);
+            if (!prev) return;
+            if (prev.status !== 'done' && nj.status === 'done') {
+              this.notify({
+                type: 'success',
+                title: 'Transcrição concluída',
+                message: nj.title,
+                duration: 6000,
+              });
+            } else if (prev.status !== 'error' && nj.status === 'error') {
+              this.notify({
+                type: 'error',
+                title: 'Erro na transcrição',
+                message: `${nj.title}: ${nj.error_message || 'erro desconhecido'}`,
+                duration: 0, // não some sozinha
+              });
+            }
+          });
+        }
+
+        this.jobs = newJobs;
       } catch (err) {
         console.error('Falha ao carregar jobs:', err);
       }

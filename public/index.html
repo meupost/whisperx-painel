@@ -110,6 +110,18 @@
       <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
       </symbol>
+      <symbol id="i-bell" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+      </symbol>
+      <symbol id="i-bell-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M13.73 21a2 2 0 0 1-3.46 0"/><path d="M18.63 13A17.89 17.89 0 0 1 18 8"/><path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/><path d="M18 8a6 6 0 0 0-9.33-5"/><line x1="1" y1="1" x2="23" y2="23"/>
+      </symbol>
+      <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+      </symbol>
+      <symbol id="i-trash-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+      </symbol>
       <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0">
         <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
       </symbol>
@@ -136,64 +148,186 @@
 
   <!-- Header -->
   <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-20">
-    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white">
-          <svg class="w-5 h-5"><use href="#i-mic"/></svg>
+    <div class="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+
+      <!-- Esquerda: Logo + título -->
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white flex-shrink-0">
+          <svg class="w-4 h-4"><use href="#i-mic"/></svg>
         </div>
-        <div>
-          <h1 class="text-lg font-semibold tracking-tight">Painel de Transcrição</h1>
-          <p class="text-xs text-slate-400">WhisperX · áudio em legendas precisas</p>
+        <div class="min-w-0">
+          <h1 class="text-sm font-semibold tracking-tight leading-tight">Painel de Transcrição</h1>
+          <p class="text-[11px] text-slate-400 leading-tight truncate">WhisperX · áudio em legendas precisas</p>
         </div>
       </div>
-      <div class="flex items-center gap-3">
-        <a href="/api-docs.html" class="text-sm text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition flex items-center gap-2" title="Documentação da API">
-          <svg class="w-4 h-4"><use href="#i-code"/></svg>
-          <span class="hidden sm:inline">API</span>
-        </a>
-        <button @click="loadJobs()" class="text-sm text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition flex items-center gap-2">
-          <svg class="w-4 h-4"><use href="#i-refresh"/></svg>
-          <span>Atualizar</span>
-        </button>
-        <span class="text-xs text-slate-400">
-          <span x-text="stats.total"></span> jobs ·
-          <span class="text-emerald-400" x-text="stats.done"></span> prontos ·
-          <span class="text-amber-400" x-text="stats.processing"></span> processando
-        </span>
+
+      <!-- Direita: Estatísticas + ações -->
+      <div class="flex items-center gap-2">
+
+        <!-- Estatísticas em pílula compacta -->
+        <div class="hidden md:flex items-center gap-3 bg-slate-800/40 border border-slate-800 rounded-lg px-3 py-1.5 text-xs">
+          <span class="flex items-center gap-1.5">
+            <span class="text-slate-100 font-semibold tabular-nums" x-text="stats.total"></span>
+            <span class="text-slate-400">jobs</span>
+          </span>
+          <span class="w-px h-3 bg-slate-700"></span>
+          <span class="flex items-center gap-1.5" :class="stats.done > 0 ? '' : 'opacity-50'">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            <span class="text-emerald-400 font-semibold tabular-nums" x-text="stats.done"></span>
+          </span>
+          <span class="flex items-center gap-1.5" :class="stats.processing > 0 ? '' : 'opacity-50'">
+            <span class="w-1.5 h-1.5 rounded-full" :class="stats.processing > 0 ? 'bg-amber-400 animate-pulse' : 'bg-slate-600'"></span>
+            <span class="font-semibold tabular-nums" :class="stats.processing > 0 ? 'text-amber-400' : 'text-slate-500'" x-text="stats.processing"></span>
+          </span>
+        </div>
+
+        <!-- Divisor -->
+        <span class="hidden md:block w-px h-6 bg-slate-800"></span>
+
+        <!-- Ações secundárias agrupadas -->
+        <div class="flex items-center gap-0.5">
+          <a
+            href="/api-docs.html"
+            class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition"
+            title="Documentação da API"
+          >
+            <svg class="w-4 h-4"><use href="#i-code"/></svg>
+          </a>
+
+          <button
+            @click="loadJobs()"
+            class="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition"
+            title="Atualizar lista"
+          >
+            <svg class="w-4 h-4"><use href="#i-refresh"/></svg>
+          </button>
+
+          <!-- Sininho de notificações -->
+          <div class="relative">
+            <button
+              @click="toggleNotifications()"
+              class="relative text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition"
+              :class="hasUnread ? '!text-amber-400' : ''"
+              :title="notificationsCount > 0 ? notificationsCount + ' notificações' : 'Notificações'"
+            >
+              <svg class="w-4 h-4"><use href="#i-bell"/></svg>
+              <span
+                x-show="notificationsCount > 0"
+                class="absolute top-1 right-1 min-w-[14px] h-[14px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border-2 border-slate-900"
+                x-text="notificationsCount > 9 ? '9+' : notificationsCount"
+              ></span>
+            </button>
+
+            <!-- Painel de notificações -->
+            <div
+              x-show="notificationsOpen"
+              @click.outside="notificationsOpen = false"
+              x-transition.opacity
+              class="absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl overflow-hidden z-30"
+              style="display: none;"
+            >
+              <div class="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                <h3 class="text-sm font-semibold flex items-center gap-2">
+                  <svg class="w-4 h-4"><use href="#i-bell"/></svg>
+                  <span>Notificações</span>
+                  <span x-show="notificationsCount > 0" class="text-xs text-slate-400" x-text="`(${notificationsCount})`"></span>
+                </h3>
+                <div class="flex items-center gap-1">
+                  <button
+                    x-show="notifications.length > 0"
+                    @click="markAllRead()"
+                    class="text-xs text-slate-400 hover:text-slate-200 px-2 py-1 rounded transition"
+                    title="Marcar tudo como lido"
+                  >
+                    Marcar lidas
+                  </button>
+                  <button
+                    x-show="notifications.length > 0"
+                    @click="clearNotifications()"
+                    class="text-slate-400 hover:text-red-400 p-1 rounded transition"
+                    title="Limpar todas"
+                  >
+                    <svg class="w-3.5 h-3.5"><use href="#i-trash-2"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="max-h-96 overflow-y-auto">
+                <template x-if="notifications.length === 0">
+                  <div class="px-4 py-12 text-center">
+                    <svg class="w-10 h-10 mx-auto text-slate-700 mb-2"><use href="#i-bell-off"/></svg>
+                    <p class="text-sm text-slate-400">Nenhuma notificação</p>
+                    <p class="text-xs text-slate-500 mt-1">Avisos importantes aparecerão aqui</p>
+                  </div>
+                </template>
+
+                <ul class="divide-y divide-slate-800">
+                  <template x-for="(notif, idx) in notifications" :key="notif.id">
+                    <li
+                      :class="!notif.read ? 'bg-brand-600/5' : ''"
+                      class="px-4 py-3 hover:bg-slate-800/40 transition group"
+                    >
+                      <div class="flex items-start gap-3">
+                        <!-- Ícone por tipo -->
+                        <div class="mt-0.5 flex-shrink-0">
+                          <template x-if="notif.type === 'success'">
+                            <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                              <svg class="w-3.5 h-3.5"><use href="#i-check"/></svg>
+                            </div>
+                          </template>
+                          <template x-if="notif.type === 'warning'">
+                            <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                              <svg class="w-3.5 h-3.5"><use href="#i-alert"/></svg>
+                            </div>
+                          </template>
+                          <template x-if="notif.type === 'error'">
+                            <div class="w-7 h-7 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
+                              <svg class="w-3.5 h-3.5"><use href="#i-alert"/></svg>
+                            </div>
+                          </template>
+                          <template x-if="notif.type === 'info' || !notif.type">
+                            <div class="w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
+                              <svg class="w-3.5 h-3.5"><use href="#i-info"/></svg>
+                            </div>
+                          </template>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                          <div class="flex items-center gap-2">
+                            <p class="text-sm font-medium text-slate-100 truncate" x-text="notif.title"></p>
+                            <span x-show="!notif.read" class="w-1.5 h-1.5 rounded-full bg-brand-500 flex-shrink-0"></span>
+                          </div>
+                          <p class="text-xs text-slate-400 mt-0.5 leading-relaxed" x-text="notif.message"></p>
+                          <p class="text-[10px] text-slate-500 mt-1.5" x-text="formatRelativeTime(notif.timestamp)"></p>
+                          <template x-if="notif.action">
+                            <button
+                              @click="runNotificationAction(notif); markRead(notif.id)"
+                              class="mt-2 text-xs bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded transition"
+                              x-text="notif.action.label"
+                            ></button>
+                          </template>
+                        </div>
+
+                        <button
+                          @click="dismissNotification(notif.id)"
+                          class="text-slate-600 hover:text-red-400 p-1 transition opacity-0 group-hover:opacity-100"
+                          title="Remover"
+                        >
+                          <svg class="w-3.5 h-3.5"><use href="#i-x"/></svg>
+                        </button>
+                      </div>
+                    </li>
+                  </template>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </header>
 
   <main class="max-w-7xl mx-auto px-6 py-8 grid lg:grid-cols-12 gap-6">
-
-    <!-- Status do sistema -->
-    <div class="lg:col-span-12" x-show="health.checked && !health.ok" x-transition>
-      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
-        <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5"><use href="#i-alert"/></svg>
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-amber-200">Ambiente não está totalmente pronto</p>
-          <p class="text-xs text-amber-300/80 mt-1" x-text="health.message"></p>
-          <div class="text-xs text-amber-300/60 mt-2 flex flex-wrap gap-x-4 gap-y-1">
-            <span>
-              Python:
-              <span :class="health.python_ok ? 'text-emerald-400' : 'text-red-400'" x-text="health.python_ok ? 'OK ' + (health.python_version || '') : 'AUSENTE'"></span>
-            </span>
-            <span>
-              WhisperX:
-              <span :class="health.whisperx_ok ? 'text-emerald-400' : 'text-red-400'" x-text="health.whisperx_ok ? 'OK ' + (health.whisperx_version || '') : 'AUSENTE'"></span>
-            </span>
-            <span>
-              FFmpeg:
-              <span :class="health.ffmpeg_ok ? 'text-emerald-400' : 'text-red-400'" x-text="health.ffmpeg_ok ? 'OK' : 'AUSENTE'"></span>
-            </span>
-          </div>
-          <p class="text-xs text-amber-200/80 mt-2 font-mono">
-            Para corrigir, rode no terminal: <span class="bg-amber-500/20 px-1.5 py-0.5 rounded">npm run setup</span>
-          </p>
-        </div>
-        <button @click="checkHealth()" class="text-xs text-amber-200 hover:text-white">Re-verificar</button>
-      </div>
-    </div>
 
     <!-- COLUNA ESQUERDA — Formulário -->
     <section class="lg:col-span-5">
@@ -1256,6 +1390,68 @@
         </ul>
       </div>
     </div>
+  </div>
+
+  <!-- Toasts flutuantes (canto inferior direito) -->
+  <div class="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none max-w-sm">
+    <template x-for="toast in toasts" :key="toast.id">
+      <div
+        x-transition:enter="transition ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-x-8"
+        x-transition:enter-end="opacity-100 translate-x-0"
+        x-transition:leave="transition ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-x-0"
+        x-transition:leave-end="opacity-0 translate-x-8"
+        class="pointer-events-auto bg-slate-900 border rounded-xl shadow-2xl overflow-hidden flex items-start gap-3 p-3 min-w-[280px]"
+        :class="{
+          'border-emerald-500/40': toast.type === 'success',
+          'border-amber-500/40': toast.type === 'warning',
+          'border-red-500/40': toast.type === 'error',
+          'border-blue-500/40': toast.type === 'info' || !toast.type
+        }"
+      >
+        <div class="flex-shrink-0 mt-0.5">
+          <template x-if="toast.type === 'success'">
+            <div class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <svg class="w-4 h-4"><use href="#i-check"/></svg>
+            </div>
+          </template>
+          <template x-if="toast.type === 'warning'">
+            <div class="w-7 h-7 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <svg class="w-4 h-4"><use href="#i-alert"/></svg>
+            </div>
+          </template>
+          <template x-if="toast.type === 'error'">
+            <div class="w-7 h-7 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center">
+              <svg class="w-4 h-4"><use href="#i-alert"/></svg>
+            </div>
+          </template>
+          <template x-if="toast.type === 'info' || !toast.type">
+            <div class="w-7 h-7 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center">
+              <svg class="w-4 h-4"><use href="#i-info"/></svg>
+            </div>
+          </template>
+        </div>
+
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-slate-100" x-text="toast.title"></p>
+          <p x-show="toast.message" class="text-xs text-slate-400 mt-0.5 leading-relaxed" x-text="toast.message"></p>
+          <button
+            x-show="toast.action"
+            @click="runNotificationAction(toast); dismissToast(toast.id)"
+            class="mt-2 text-xs bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded transition"
+            x-text="toast.action ? toast.action.label : ''"
+          ></button>
+        </div>
+
+        <button
+          @click="dismissToast(toast.id)"
+          class="text-slate-500 hover:text-slate-200 p-1 transition flex-shrink-0"
+        >
+          <svg class="w-3.5 h-3.5"><use href="#i-x"/></svg>
+        </button>
+      </div>
+    </template>
   </div>
 
   <script src="/app.js"></script>
