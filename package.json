@@ -1,0 +1,50 @@
+﻿{
+  "name": "transcricao-dashboard",
+  "version": "1.0.0",
+  "description": "Dashboard local para gerar legendas precisas em qualquer idioma usando WhisperX, com timestamps por palavra e editor visual.",
+  "main": "src/server.js",
+  "keywords": [
+    "whisperx",
+    "transcription",
+    "subtitles",
+    "captions",
+    "srt",
+    "vtt",
+    "speech-to-text",
+    "audio",
+    "node",
+    "python",
+    "alpine",
+    "tailwind"
+  ],
+  "author": "",
+  "license": "MIT",
+  "homepage": "https://github.com/meupost/whisperx-painel#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/meupost/whisperx-painel.git"
+  },
+  "bugs": {
+    "url": "https://github.com/meupost/whisperx-painel/issues"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.js",
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop transcricao",
+    "pm2:restart": "pm2 restart transcricao --update-env",
+    "pm2:logs": "pm2 logs transcricao",
+    "pm2:delete": "pm2 delete transcricao"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "multer": "^2.1.1",
+    "nanoid": "^3.3.7"
+  }
+}

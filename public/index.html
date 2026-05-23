@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Transcrição · WhisperX</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <script src="/languages.js"></script>
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen" x-data="dashboard()" x-init="init()">
+
+  <!-- SVG Icons (sprite reutilizável) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>
+      </symbol>
+      <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+      </symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </symbol>
+      <symbol id="i-music" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+      </symbol>
+      <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </symbol>
+      <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+      </symbol>
+      <symbol id="i-cog" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+      </symbol>
+      <symbol id="i-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </symbol>
+      <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+      </symbol>
+      <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </symbol>
+      <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+      </symbol>
+      <symbol id="i-folder" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </symbol>
+      <symbol id="i-cpu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/><line x1="20" y1="9" x2="23" y2="9"/><line x1="20" y1="14" x2="23" y2="14"/><line x1="1" y1="9" x2="4" y2="9"/><line x1="1" y1="14" x2="4" y2="14"/>
+      </symbol>
+      <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </symbol>
+      <symbol id="i-play" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </symbol>
+      <symbol id="i-chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 18 15 12 9 6"/>
+      </symbol>
+      <symbol id="i-chevron-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </symbol>
+      <symbol id="i-inbox" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+      </symbol>
+      <symbol id="i-loader" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+      </symbol>
+      <symbol id="i-star" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+      </symbol>
+      <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </symbol>
+      <symbol id="i-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+      </symbol>
+      <symbol id="i-split" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="12" y1="3" x2="12" y2="21"/><polyline points="8 7 12 3 16 7"/><polyline points="8 17 12 21 16 17"/>
+      </symbol>
+      <symbol id="i-merge" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="8 12 12 16 16 12"/><line x1="12" y1="3" x2="12" y2="16"/>
+      </symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0">
+        <rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>
+      </symbol>
+      <symbol id="i-skip-back" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="19 20 9 12 19 4 19 20" fill="currentColor"/><line x1="5" y1="19" x2="5" y2="5"/>
+      </symbol>
+      <symbol id="i-skip-forward" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 4 15 12 5 20 5 4" fill="currentColor"/><line x1="19" y1="5" x2="19" y2="19"/>
+      </symbol>
+      <symbol id="i-volume-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>
+      </symbol>
+      <symbol id="i-volume-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </symbol>
+      <symbol id="i-volume-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      </symbol>
+      <symbol id="i-loop" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+      </symbol>
+    </defs>
+  </svg>
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-20">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white">
+          <svg class="w-5 h-5"><use href="#i-mic"/></svg>
+        </div>
+        <div>
+          <h1 class="text-lg font-semibold tracking-tight">Painel de Transcrição</h1>
+          <p class="text-xs text-slate-400">WhisperX · áudio em legendas precisas</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button @click="loadJobs()" class="text-sm text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition flex items-center gap-2">
+          <svg class="w-4 h-4"><use href="#i-refresh"/></svg>
+          <span>Atualizar</span>
+        </button>
+        <span class="text-xs text-slate-400">
+          <span x-text="stats.total"></span> jobs ·
+          <span class="text-emerald-400" x-text="stats.done"></span> prontos ·
+          <span class="text-amber-400" x-text="stats.processing"></span> processando
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-6 py-8 grid lg:grid-cols-12 gap-6">
+
+    <!-- Status do sistema -->
+    <div class="lg:col-span-12" x-show="health.checked && !health.ok" x-transition>
+      <div class="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5"><use href="#i-alert"/></svg>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-amber-200">Ambiente não está totalmente pronto</p>
+          <p class="text-xs text-amber-300/80 mt-1" x-text="health.message"></p>
+          <div class="text-xs text-amber-300/60 mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <span>
+              Python:
+              <span :class="health.python_ok ? 'text-emerald-400' : 'text-red-400'" x-text="health.python_ok ? 'OK ' + (health.python_version || '') : 'AUSENTE'"></span>
+            </span>
+            <span>
+              WhisperX:
+              <span :class="health.whisperx_ok ? 'text-emerald-400' : 'text-red-400'" x-text="health.whisperx_ok ? 'OK ' + (health.whisperx_version || '') : 'AUSENTE'"></span>
+            </span>
+            <span>
+              FFmpeg:
+              <span :class="health.ffmpeg_ok ? 'text-emerald-400' : 'text-red-400'" x-text="health.ffmpeg_ok ? 'OK' : 'AUSENTE'"></span>
+            </span>
+          </div>
+          <p class="text-xs text-amber-200/80 mt-2 font-mono">
+            Para corrigir, rode no terminal: <span class="bg-amber-500/20 px-1.5 py-0.5 rounded">npm run setup</span>
+          </p>
+        </div>
+        <button @click="checkHealth()" class="text-xs text-amber-200 hover:text-white">Re-verificar</button>
+      </div>
+    </div>
+
+    <!-- COLUNA ESQUERDA — Formulário -->
+    <section class="lg:col-span-5">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+        <h2 class="text-base font-semibold mb-1">Nova transcrição</h2>
+        <p class="text-xs text-slate-400 mb-5">Suba um áudio e gere legendas precisas com timestamp por palavra.</p>
+
+        <form @submit.prevent="submitJob()" class="space-y-5">
+
+          <!-- Upload de áudio -->
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Arquivo de áudio</label>
+            <div
+              @drop.prevent="handleDrop($event)"
+              @dragover.prevent="dragover = true"
+              @dragleave.prevent="dragover = false"
+              :class="dragover ? 'border-brand-500 bg-brand-500/5' : 'border-slate-700'"
+              class="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition"
+              @click="$refs.fileInput.click()"
+            >
+              <template x-if="!audioFile">
+                <div>
+                  <div class="flex justify-center mb-3 text-slate-500">
+                    <svg class="w-10 h-10"><use href="#i-upload"/></svg>
+                  </div>
+                  <p class="text-sm text-slate-300">Arraste o áudio aqui ou clique para selecionar</p>
+                  <p class="text-xs text-slate-500 mt-1">MP3, WAV, M4A, FLAC, OGG, OPUS</p>
+                </div>
+              </template>
+              <template x-if="audioFile">
+                <div class="text-left">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center flex-shrink-0">
+                      <svg class="w-5 h-5"><use href="#i-music"/></svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm text-slate-100 font-medium truncate" x-text="audioFile.name"></p>
+                      <p class="text-xs text-slate-400" x-text="formatBytes(audioFile.size)"></p>
+                    </div>
+                    <button type="button" @click.stop="audioFile = null; $refs.fileInput.value = ''" class="text-slate-500 hover:text-red-400 transition p-1">
+                      <svg class="w-4 h-4"><use href="#i-x"/></svg>
+                    </button>
+                  </div>
+                </div>
+              </template>
+              <input
+                type="file"
+                x-ref="fileInput"
+                class="hidden"
+                accept=".mp3,.wav,.m4a,.flac,.ogg,.opus,.aac,.webm,.mp4"
+                @change="handleFile($event.target.files[0])"
+              />
+            </div>
+          </div>
+
+          <!-- Título -->
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Título (opcional)</label>
+            <input
+              type="text"
+              x-model="form.title"
+              placeholder="Ex: Episódio 01 — A Cozinha de Zagreb"
+              class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500"
+            />
+          </div>
+
+          <!-- Modo -->
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Modo de processamento</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                @click="form.mode = 'transcribe'"
+                :class="form.mode === 'transcribe' ? 'bg-brand-600 border-brand-500' : 'bg-slate-800 border-slate-700 hover:border-slate-600'"
+                class="border rounded-lg px-3 py-2.5 text-left transition"
+              >
+                <div class="text-sm font-medium">Transcrever</div>
+                <div class="text-xs text-slate-300/80">Áudio em texto + legenda</div>
+              </button>
+              <button
+                type="button"
+                @click="form.mode = 'align'"
+                :class="form.mode === 'align' ? 'bg-brand-600 border-brand-500' : 'bg-slate-800 border-slate-700 hover:border-slate-600'"
+                class="border rounded-lg px-3 py-2.5 text-left transition"
+              >
+                <div class="text-sm font-medium">Alinhar</div>
+                <div class="text-xs text-slate-300/80">Áudio + texto exato</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Texto de referência -->
+          <div x-show="form.mode === 'align'" x-transition>
+            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Texto de referência (no idioma do áudio)</label>
+
+            <!-- Tabs -->
+            <div class="flex items-center gap-1 mb-2 bg-slate-800/40 p-0.5 rounded-lg w-fit">
+              <button
+                type="button"
+                @click="referenceTab = 'paste'"
+                :class="referenceTab === 'paste' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'"
+                class="text-xs px-3 py-1.5 rounded-md transition flex items-center gap-1.5"
+              >
+                <span>Colar texto</span>
+              </button>
+              <button
+                type="button"
+                @click="referenceTab = 'file'"
+                :class="referenceTab === 'file' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'"
+                class="text-xs px-3 py-1.5 rounded-md transition flex items-center gap-1.5"
+              >
+                <span>Carregar arquivo</span>
+              </button>
+            </div>
+
+            <!-- Modo: colar texto -->
+            <div x-show="referenceTab === 'paste'">
+              <textarea
+                x-model="form.reference_text"
+                rows="6"
+                placeholder="Cole aqui o texto exato que foi falado no áudio (ex: o roteiro em croata)..."
+                class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500 font-mono leading-relaxed"
+              ></textarea>
+            </div>
+
+            <!-- Modo: arquivo -->
+            <div x-show="referenceTab === 'file'">
+              <div
+                @drop.prevent="handleTextDrop($event)"
+                @dragover.prevent="textDragover = true"
+                @dragleave.prevent="textDragover = false"
+                :class="textDragover ? 'border-brand-500 bg-brand-500/5' : 'border-slate-700'"
+                class="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition"
+                @click="$refs.textFileInput.click()"
+              >
+                <template x-if="!referenceFileName">
+                  <div>
+                    <div class="flex justify-center mb-2 text-slate-500">
+                      <svg class="w-8 h-8"><use href="#i-upload"/></svg>
+                    </div>
+                    <p class="text-sm text-slate-300">Arraste o roteiro aqui ou clique para selecionar</p>
+                    <p class="text-xs text-slate-500 mt-1">.txt, .srt, .md (UTF-8)</p>
+                  </div>
+                </template>
+                <template x-if="referenceFileName">
+                  <div class="text-left">
+                    <div class="flex items-center gap-3">
+                      <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                        <svg class="w-5 h-5"><use href="#i-check"/></svg>
+                      </div>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-sm text-slate-100 font-medium truncate" x-text="referenceFileName"></p>
+                        <p class="text-xs text-slate-400">
+                          <span x-text="form.reference_text.length"></span> caracteres ·
+                          <span x-text="referenceWordCount"></span> palavras
+                        </p>
+                      </div>
+                      <button type="button" @click.stop="clearReferenceFile()" class="text-slate-500 hover:text-red-400 transition p-1">
+                        <svg class="w-4 h-4"><use href="#i-x"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                </template>
+                <input
+                  type="file"
+                  x-ref="textFileInput"
+                  class="hidden"
+                  accept=".txt,.srt,.md,text/plain"
+                  @change="handleTextFile($event.target.files[0])"
+                />
+              </div>
+
+              <!-- Preview do conteúdo carregado -->
+              <div x-show="referenceFileName && form.reference_text" class="mt-2">
+                <details class="bg-slate-800/40 border border-slate-800 rounded-lg">
+                  <summary class="text-xs text-slate-400 px-3 py-2 cursor-pointer hover:text-slate-200">
+                    Pré-visualizar conteúdo
+                  </summary>
+                  <div class="px-3 pb-3 max-h-48 overflow-y-auto">
+                    <pre class="text-xs text-slate-300 whitespace-pre-wrap font-mono leading-relaxed" x-text="form.reference_text"></pre>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <p class="text-xs text-slate-500 mt-2">
+              Modo ideal para áudios gerados por TTS. Você já tem o texto, então o WhisperX só sincroniza os timestamps com altíssima precisão.
+            </p>
+          </div>
+
+          <!-- Idioma -->
+          <div>
+            <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Idioma</label>
+            <button
+              type="button"
+              @click="openLanguageModal()"
+              class="w-full bg-slate-800 border border-slate-700 hover:border-slate-600 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-brand-500 flex items-center justify-between transition group"
+            >
+              <span class="flex items-center gap-2 min-w-0">
+                <template x-if="form.language === 'auto'">
+                  <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4 text-slate-400"><use href="#i-cog"/></svg>
+                    <span class="text-slate-200">Detectar automaticamente</span>
+                  </span>
+                </template>
+                <template x-if="form.language !== 'auto'">
+                  <span class="flex items-center gap-2 min-w-0">
+                    <span class="text-slate-200 font-medium truncate" x-text="selectedLanguageName"></span>
+                    <span class="text-[10px] uppercase tracking-wider text-slate-500 font-mono px-1.5 py-0.5 rounded bg-slate-900" x-text="form.language"></span>
+                  </span>
+                </template>
+              </span>
+              <span class="flex items-center gap-2 text-slate-400 text-xs">
+                <span class="hidden sm:inline">Trocar</span>
+                <svg class="w-4 h-4 group-hover:text-slate-200 transition"><use href="#i-chevron-right"/></svg>
+              </span>
+            </button>
+          </div>
+
+          <!-- Configurações avançadas -->
+          <div class="pt-2 border-t border-slate-800">
+            <button
+              type="button"
+              @click="showAdvanced = !showAdvanced"
+              class="flex items-center gap-2 text-xs text-slate-400 hover:text-slate-200 mb-3"
+            >
+              <svg class="w-3.5 h-3.5 transition-transform" :class="showAdvanced ? 'rotate-0' : '-rotate-90'"><use href="#i-chevron-down"/></svg>
+              <span>Configurações avançadas</span>
+            </button>
+
+            <div x-show="showAdvanced" x-transition class="space-y-4">
+              <!-- Device -->
+              <div>
+                <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Processamento</label>
+                <div class="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    @click="form.device = 'cpu'; form.compute_type = 'int8'"
+                    :class="form.device === 'cpu' ? 'bg-brand-600 border-brand-500' : 'bg-slate-800 border-slate-700 hover:border-slate-600'"
+                    class="border rounded-lg px-3 py-2.5 text-left transition flex items-start gap-2"
+                  >
+                    <svg class="w-4 h-4 mt-0.5 flex-shrink-0"><use href="#i-cpu"/></svg>
+                    <div>
+                      <div class="text-sm font-medium">CPU</div>
+                      <div class="text-xs text-slate-300/80">Compatível com qualquer PC</div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    @click="if (health.cuda_available) { form.device = 'cuda'; form.compute_type = 'float16' }"
+                    :disabled="!health.cuda_available"
+                    :class="[
+                      form.device === 'cuda' ? 'bg-brand-600 border-brand-500' : 'bg-slate-800 border-slate-700 hover:border-slate-600',
+                      !health.cuda_available ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'
+                    ]"
+                    class="border rounded-lg px-3 py-2.5 text-left transition flex items-start gap-2"
+                    :title="health.cuda_available ? 'GPU NVIDIA detectada' : 'Sem GPU compatível neste PC'"
+                  >
+                    <svg class="w-4 h-4 mt-0.5 flex-shrink-0"><use href="#i-zap"/></svg>
+                    <div>
+                      <div class="text-sm font-medium flex items-center gap-1.5">
+                        <span>GPU (CUDA)</span>
+                        <span x-show="health.checked && !health.cuda_available" class="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-slate-700/80 text-slate-400">indisponível</span>
+                      </div>
+                      <div class="text-xs text-slate-300/80">Requer NVIDIA</div>
+                    </div>
+                  </button>
+                </div>
+                <p class="text-xs text-slate-500 mt-2" x-show="form.device === 'cpu'">
+                  Modo CPU é compatível com qualquer máquina, mas processa mais devagar (5-15 min para 10 min de áudio).
+                </p>
+                <p class="text-xs text-slate-500 mt-2" x-show="form.device === 'cuda'">
+                  Modo GPU é muito mais rápido (30s-1min para 10 min de áudio), mas exige placa NVIDIA com CUDA instalado.
+                </p>
+                <p class="text-xs text-amber-400/80 mt-2" x-show="health.checked && !health.cuda_available">
+                  Nenhuma GPU NVIDIA compatível detectada. Apenas CPU está disponível.
+                </p>
+              </div>
+
+              <!-- Modelo -->
+              <div x-show="form.mode === 'transcribe'">
+                <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Tamanho do modelo</label>
+                <select x-model="form.model_size" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500">
+                  <option value="tiny">tiny — mais rápido, qualidade básica</option>
+                  <option value="base">base</option>
+                  <option value="small">small — recomendado para CPU</option>
+                  <option value="medium">medium</option>
+                  <option value="large-v2">large-v2 — alta qualidade</option>
+                  <option value="large-v3">large-v3 — máxima qualidade (RAM/VRAM alta)</option>
+                </select>
+              </div>
+
+              <!-- Compute type -->
+              <div>
+                <label class="block text-xs uppercase tracking-wider text-slate-400 mb-2">Precisão de cálculo</label>
+                <select x-model="form.compute_type" class="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand-500">
+                  <template x-if="form.device === 'cpu'">
+                    <optgroup label="CPU">
+                      <option value="int8">int8 — leve, recomendado</option>
+                      <option value="int8_float32">int8_float32 — meio termo</option>
+                      <option value="float32">float32 — máxima precisão, lento</option>
+                    </optgroup>
+                  </template>
+                  <template x-if="form.device === 'cuda'">
+                    <optgroup label="GPU">
+                      <option value="float16">float16 — recomendado</option>
+                      <option value="int8_float16">int8_float16 — econômico em VRAM</option>
+                      <option value="int8">int8 — usa pouca VRAM</option>
+                      <option value="float32">float32 — máxima precisão, mais VRAM</option>
+                    </optgroup>
+                  </template>
+                </select>
+                <p class="text-xs text-slate-500 mt-1.5" x-show="form.device === 'cpu'">
+                  CPU não suporta float16. Use int8 (rápido) ou float32 (preciso).
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <button
+            type="submit"
+            :disabled="!audioFile || submitting"
+            class="w-full bg-brand-600 hover:bg-brand-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition flex items-center justify-center gap-2"
+          >
+            <template x-if="!submitting">
+              <span class="flex items-center gap-2">
+                <svg class="w-4 h-4"><use href="#i-play"/></svg>
+                <span>Iniciar transcrição</span>
+              </span>
+            </template>
+            <template x-if="submitting">
+              <span class="flex items-center gap-2">
+                <svg class="w-4 h-4 animate-spin"><use href="#i-loader"/></svg>
+                <span>Enviando...</span>
+              </span>
+            </template>
+          </button>
+
+          <p x-show="submitError" x-text="submitError" class="text-sm text-red-400"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- COLUNA DIREITA — Lista de jobs -->
+    <section class="lg:col-span-7">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+        <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+          <div>
+            <h2 class="text-base font-semibold">Suas transcrições</h2>
+            <p class="text-xs text-slate-400">Atualiza automaticamente a cada 3 segundos enquanto há jobs em processamento</p>
+          </div>
+        </div>
+
+        <template x-if="jobs.length === 0">
+          <div class="px-6 py-16 text-center">
+            <div class="flex justify-center mb-3 text-slate-700">
+              <svg class="w-12 h-12"><use href="#i-inbox"/></svg>
+            </div>
+            <p class="text-sm text-slate-400">Nenhuma transcrição ainda. Suba um áudio para começar.</p>
+          </div>
+        </template>
+
+        <ul class="divide-y divide-slate-800">
+          <template x-for="job in jobs" :key="job.id">
+            <li class="px-6 py-4 hover:bg-slate-800/40 transition">
+              <div class="flex items-start gap-4">
+                <!-- Status icon -->
+                <div class="mt-1">
+                  <template x-if="job.status === 'pending'">
+                    <div class="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-slate-400">
+                      <svg class="w-4 h-4"><use href="#i-clock"/></svg>
+                    </div>
+                  </template>
+                  <template x-if="job.status === 'processing'">
+                    <div class="w-9 h-9 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-400">
+                      <svg class="w-4 h-4 animate-spin"><use href="#i-loader"/></svg>
+                    </div>
+                  </template>
+                  <template x-if="job.status === 'done'">
+                    <div class="w-9 h-9 rounded-full bg-emerald-500/15 flex items-center justify-center text-emerald-400">
+                      <svg class="w-4 h-4"><use href="#i-check"/></svg>
+                    </div>
+                  </template>
+                  <template x-if="job.status === 'error'">
+                    <div class="w-9 h-9 rounded-full bg-red-500/15 flex items-center justify-center text-red-400">
+                      <svg class="w-4 h-4"><use href="#i-alert"/></svg>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Info -->
+                <div class="flex-1 min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-sm font-medium truncate" x-text="job.title"></h3>
+                    <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300" x-text="job.language"></span>
+                    <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300" x-text="job.mode"></span>
+                    <span class="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded bg-slate-800 text-slate-300" x-text="job.device"></span>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-0.5" x-text="job.audio_filename + ' · ' + formatBytes(job.audio_size_bytes)"></p>
+
+                  <!-- Progress -->
+                  <template x-if="job.status === 'processing'">
+                    <div class="mt-2">
+                      <div class="text-xs text-amber-400 flex items-center gap-2">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                        <span x-text="job.progress_message || job.progress_stage || 'Processando...'"></span>
+                      </div>
+                    </div>
+                  </template>
+
+                  <!-- Erro -->
+                  <template x-if="job.status === 'error'">
+                    <p class="mt-2 text-xs text-red-400 break-words" x-text="job.error_message"></p>
+                  </template>
+
+                  <!-- Sucesso: ações -->
+                  <template x-if="job.status === 'done'">
+                    <div class="mt-3 flex items-center gap-2 flex-wrap">
+                      <button
+                        @click="openEditor(job.id)"
+                        class="text-xs bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                      >
+                        <svg class="w-3.5 h-3.5"><use href="#i-edit"/></svg>
+                        <span>Editor</span>
+                      </button>
+                      <button
+                        @click="openPreview(job.id)"
+                        class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+                      >
+                        <svg class="w-3.5 h-3.5"><use href="#i-eye"/></svg>
+                        <span>Visualizar</span>
+                      </button>
+                      <a :href="`/api/jobs/${job.id}/download/srt`" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5"><use href="#i-download"/></svg>
+                        <span>SRT</span>
+                      </a>
+                      <a :href="`/api/jobs/${job.id}/download/vtt`" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5"><use href="#i-download"/></svg>
+                        <span>VTT</span>
+                      </a>
+                      <a :href="`/api/jobs/${job.id}/download/txt`" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5"><use href="#i-download"/></svg>
+                        <span>TXT</span>
+                      </a>
+                      <a :href="`/api/jobs/${job.id}/download/json`" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5"><use href="#i-download"/></svg>
+                        <span>JSON</span>
+                      </a>
+                      <span class="text-xs text-slate-500" x-text="`· ${formatDuration(job.duration_seconds)}`"></span>
+                    </div>
+                  </template>
+                </div>
+
+                <!-- Delete -->
+                <button
+                  @click="deleteJob(job.id)"
+                  class="text-slate-600 hover:text-red-400 transition p-1"
+                  title="Apagar"
+                >
+                  <svg class="w-4 h-4"><use href="#i-trash"/></svg>
+                </button>
+              </div>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal de Seleção de Idioma -->
+  <div
+    x-show="langOpen"
+    x-transition.opacity
+    class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center p-4 pt-16 sm:pt-24"
+    @click.self="closeLanguageModal()"
+    @keydown.escape.window="closeLanguageModal()"
+    style="display: none;"
+  >
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+
+      <!-- Header com busca -->
+      <div class="px-5 py-4 border-b border-slate-800">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-semibold flex items-center gap-2">
+            <svg class="w-4 h-4 text-brand-400"><use href="#i-cog"/></svg>
+            <span>Selecionar idioma</span>
+          </h3>
+          <button @click="closeLanguageModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition">
+            <svg class="w-5 h-5"><use href="#i-x"/></svg>
+          </button>
+        </div>
+        <div class="relative">
+          <input
+            type="text"
+            x-ref="langSearch"
+            x-model="languageSearch"
+            placeholder="Buscar idioma ou código (ex: pt, croata, japon...)"
+            class="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-9 py-2.5 text-sm focus:outline-none focus:border-brand-500"
+          />
+          <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"><use href="#i-search"/></svg>
+          <button
+            x-show="languageSearch"
+            @click="languageSearch = ''"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md hover:bg-slate-700 text-slate-400"
+            type="button"
+          >
+            <svg class="w-3.5 h-3.5"><use href="#i-x"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Lista -->
+      <div class="flex-1 overflow-y-auto">
+
+        <!-- Detectar automaticamente -->
+        <template x-if="form.mode === 'transcribe' && languageMatchesSearch({code: 'auto', name: 'Detectar automaticamente'})">
+          <button
+            type="button"
+            @click="selectLanguage('auto')"
+            :class="form.language === 'auto' ? 'bg-brand-600/20 text-brand-300' : 'hover:bg-slate-800/60 text-slate-200'"
+            class="w-full flex items-center gap-3 px-5 py-3 text-sm text-left transition border-b border-slate-800"
+          >
+            <div class="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0">
+              <svg class="w-4 h-4 text-slate-400"><use href="#i-cog"/></svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="font-medium">Detectar automaticamente</div>
+              <div class="text-xs text-slate-500">O Whisper identifica o idioma do áudio</div>
+            </div>
+            <template x-if="form.language === 'auto'">
+              <svg class="w-5 h-5 text-brand-400 flex-shrink-0"><use href="#i-check"/></svg>
+            </template>
+          </button>
+        </template>
+
+        <!-- Favoritos -->
+        <template x-if="favoriteLanguages.length > 0 && !languageSearch">
+          <div>
+            <div class="px-5 py-2 text-[11px] uppercase tracking-wider font-semibold text-amber-400/80 bg-slate-900/95 backdrop-blur sticky top-0 z-10 flex items-center gap-1.5 border-b border-slate-800">
+              <svg class="w-3 h-3 fill-current"><use href="#i-star"/></svg>
+              <span>Favoritos</span>
+            </div>
+            <template x-for="lang in favoriteLanguages" :key="'fav-' + lang.code">
+              <div
+                class="flex items-center hover:bg-slate-800/60 transition group cursor-pointer"
+                @click="selectLanguage(lang.code)"
+              >
+                <div class="flex-1 flex items-center gap-3 px-5 py-2.5 min-w-0">
+                  <span class="text-[10px] uppercase tracking-wider font-mono text-slate-500 bg-slate-800 px-2 py-1 rounded w-12 text-center flex-shrink-0" x-text="lang.code"></span>
+                  <div class="flex-1 min-w-0">
+                    <span class="text-sm font-medium" :class="form.language === lang.code ? 'text-brand-300' : 'text-slate-200'" x-text="lang.name"></span>
+                    <span x-show="lang.subtitle" class="text-xs text-slate-500 ml-2" x-text="lang.subtitle"></span>
+                  </div>
+                  <template x-if="form.language === lang.code">
+                    <svg class="w-4 h-4 text-brand-400 flex-shrink-0"><use href="#i-check"/></svg>
+                  </template>
+                </div>
+                <button
+                  type="button"
+                  @click.stop="toggleFavorite(lang.code)"
+                  class="p-3 text-amber-400 hover:text-amber-300 flex-shrink-0"
+                  title="Remover dos favoritos"
+                >
+                  <svg class="w-4 h-4 fill-current"><use href="#i-star"/></svg>
+                </button>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Grupos -->
+        <template x-for="group in visibleLanguageGroups" :key="group.label">
+          <div>
+            <div class="px-5 py-2 text-[11px] uppercase tracking-wider font-semibold text-slate-500 bg-slate-900/95 backdrop-blur sticky top-0 z-10 border-b border-t border-slate-800" x-text="group.label"></div>
+            <template x-for="lang in group.items" :key="group.label + '-' + lang.code">
+              <div
+                class="flex items-center hover:bg-slate-800/60 transition group cursor-pointer"
+                @click="selectLanguage(lang.code)"
+              >
+                <div class="flex-1 flex items-center gap-3 px-5 py-2.5 min-w-0">
+                  <span class="text-[10px] uppercase tracking-wider font-mono text-slate-500 bg-slate-800 px-2 py-1 rounded w-12 text-center flex-shrink-0" x-text="lang.code"></span>
+                  <div class="flex-1 min-w-0">
+                    <span class="text-sm font-medium" :class="form.language === lang.code ? 'text-brand-300' : 'text-slate-200'" x-text="lang.name"></span>
+                    <span x-show="lang.subtitle" class="text-xs text-slate-500 ml-2" x-text="lang.subtitle"></span>
+                  </div>
+                  <template x-if="form.language === lang.code">
+                    <svg class="w-4 h-4 text-brand-400 flex-shrink-0"><use href="#i-check"/></svg>
+                  </template>
+                </div>
+                <button
+                  type="button"
+                  @click.stop="toggleFavorite(lang.code)"
+                  :class="favorites.includes(lang.code) ? 'text-amber-400 hover:text-amber-300' : 'text-slate-600 hover:text-amber-400 opacity-0 group-hover:opacity-100'"
+                  class="p-3 transition flex-shrink-0"
+                  :title="favorites.includes(lang.code) ? 'Remover dos favoritos' : 'Adicionar aos favoritos'"
+                >
+                  <svg class="w-4 h-4" :class="favorites.includes(lang.code) ? 'fill-current' : ''"><use href="#i-star"/></svg>
+                </button>
+              </div>
+            </template>
+          </div>
+        </template>
+
+        <!-- Estado vazio -->
+        <template x-if="visibleLanguageGroups.length === 0 && (form.mode !== 'transcribe' || !languageMatchesSearch({code: 'auto', name: 'Detectar automaticamente'}))">
+          <div class="px-5 py-12 text-center">
+            <svg class="w-10 h-10 mx-auto text-slate-700 mb-3"><use href="#i-search"/></svg>
+            <p class="text-sm text-slate-400">Nenhum idioma encontrado para</p>
+            <p class="text-sm text-slate-200 font-mono mt-1">"<span x-text="languageSearch"></span>"</p>
+            <button @click="languageSearch = ''" class="text-xs text-brand-400 hover:text-brand-300 mt-3">Limpar busca</button>
+          </div>
+        </template>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-5 py-3 border-t border-slate-800 bg-slate-900/50 flex items-center justify-between text-xs text-slate-500">
+        <div class="flex items-center gap-4">
+          <span><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">ESC</kbd> fechar</span>
+          <span class="hidden sm:flex items-center gap-1">
+            <svg class="w-3 h-3 fill-current text-amber-400"><use href="#i-star"/></svg>
+            favoritar
+          </span>
+        </div>
+        <span x-show="favorites.length > 0" class="text-slate-400">
+          <span x-text="favorites.length"></span>
+          <span x-text="favorites.length === 1 ? 'favorito' : 'favoritos'"></span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Editor de Legenda -->
+  <div
+    x-show="editor.open"
+    x-transition.opacity
+    class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+    @keydown.escape.window="if (editor.open) closeEditor()"
+    style="display: none;"
+  >
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-6xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+
+      <!-- Header -->
+      <div class="px-5 py-3 border-b border-slate-800 flex items-center justify-between flex-shrink-0">
+        <div class="min-w-0">
+          <h3 class="text-base font-semibold flex items-center gap-2">
+            <svg class="w-4 h-4 text-brand-400"><use href="#i-mic"/></svg>
+            <span>Editor de legenda</span>
+          </h3>
+          <p class="text-xs text-slate-400 truncate" x-text="editor.title"></p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span x-show="editor.dirty" class="text-xs text-amber-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            <span>Não salvo</span>
+          </span>
+          <button @click="saveEdits()" :disabled="!editor.dirty || editor.saving" class="text-sm bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5"><use href="#i-check"/></svg>
+            <span x-text="editor.saving ? 'Salvando...' : 'Salvar'"></span>
+          </button>
+          <button @click="closeEditor()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+            <svg class="w-5 h-5"><use href="#i-x"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="px-5 py-3 border-b border-slate-800 bg-slate-900/50 flex items-center justify-between flex-wrap gap-2 flex-shrink-0">
+        <div class="flex items-center gap-2 flex-wrap">
+          <button
+            @click="editor.showRegroup = !editor.showRegroup; editor.showPostProcess = false"
+            class="text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+            :class="editor.showRegroup ? 'bg-brand-600 text-white' : 'bg-slate-800 hover:bg-slate-700'"
+          >
+            <svg class="w-3.5 h-3.5"><use href="#i-cog"/></svg>
+            <span>Reagrupar</span>
+          </button>
+          <button
+            @click="editor.showPostProcess = !editor.showPostProcess; editor.showRegroup = false"
+            class="text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1.5"
+            :class="editor.showPostProcess ? 'bg-brand-600 text-white' : 'bg-slate-800 hover:bg-slate-700'"
+          >
+            <svg class="w-3.5 h-3.5"><use href="#i-cog"/></svg>
+            <span>Pós-processar texto</span>
+          </button>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+          <span><span x-text="editor.segments.length"></span> segmentos</span>
+        </div>
+      </div>
+
+      <!-- Painel de Reagrupamento -->
+      <div x-show="editor.showRegroup" x-transition class="px-5 py-4 border-b border-slate-800 bg-slate-800/30 flex-shrink-0">
+        <h4 class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-3">Reagrupamento inteligente</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Caracteres/linha</label>
+            <input type="number" x-model.number="editor.regroupOpts.max_chars_per_line" min="20" max="100" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Linhas/segmento</label>
+            <input type="number" x-model.number="editor.regroupOpts.max_lines_per_segment" min="1" max="3" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs text-slate-400 mb-1">Duração máx (s)</label>
+            <input type="number" x-model.number="editor.regroupOpts.max_duration_seconds" min="2" max="15" step="0.5" class="w-full bg-slate-800 border border-slate-700 rounded px-2 py-1 text-sm">
+          </div>
+        </div>
+        <div class="flex items-center gap-3 text-xs text-slate-300 mb-3">
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" x-model="editor.regroupOpts.break_on_punctuation" class="rounded">
+            <span>Quebrar em pontuação</span>
+          </label>
+          <label class="flex items-center gap-1.5 cursor-pointer">
+            <input type="checkbox" x-model="editor.regroupOpts.merge_short_segments" class="rounded">
+            <span>Juntar segmentos curtos</span>
+          </label>
+        </div>
+        <div class="flex items-center gap-2">
+          <button @click="applyRegroup()" :disabled="editor.applying" class="text-xs bg-brand-600 hover:bg-brand-500 disabled:bg-slate-700 text-white px-3 py-1.5 rounded-lg transition">
+            <span x-text="editor.applying ? 'Aplicando...' : 'Aplicar reagrupamento'"></span>
+          </button>
+          <button @click="presetNetflix()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition">
+            Padrão Netflix (42 chars × 2 linhas)
+          </button>
+          <button @click="presetTikTok()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition">
+            TikTok (curto, 25 chars)
+          </button>
+        </div>
+      </div>
+
+      <!-- Painel de Pós-processamento -->
+      <div x-show="editor.showPostProcess" x-transition class="px-5 py-4 border-b border-slate-800 bg-slate-800/30 flex-shrink-0">
+        <h4 class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-3">Pós-processamento de texto</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-300 mb-3">
+          <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-800">
+            <input type="checkbox" x-model="editor.postOpts.capitalize_first_word" class="rounded">
+            <span>Maiúscula na primeira palavra</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-800">
+            <input type="checkbox" x-model="editor.postOpts.capitalize_after_period" class="rounded">
+            <span>Maiúscula após . ! ?</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-800">
+            <input type="checkbox" x-model="editor.postOpts.fix_punctuation_spacing" class="rounded">
+            <span>Corrigir espaçamento de pontuação</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-800">
+            <input type="checkbox" x-model="editor.postOpts.collapse_spaces" class="rounded">
+            <span>Remover espaços duplicados</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-800">
+            <input type="checkbox" x-model="editor.postOpts.remove_filler_words" class="rounded">
+            <span>Remover disfluências (uhm, eh, hmm...)</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-slate-800">
+            <input type="checkbox" x-model="editor.postOpts.add_period_at_end" class="rounded">
+            <span>Adicionar ponto final se faltar</span>
+          </label>
+        </div>
+        <button @click="applyPostProcess()" :disabled="editor.applying" class="text-xs bg-brand-600 hover:bg-brand-500 disabled:bg-slate-700 text-white px-3 py-1.5 rounded-lg transition">
+          <span x-text="editor.applying ? 'Aplicando...' : 'Aplicar pós-processamento'"></span>
+        </button>
+      </div>
+
+      <!-- Player de áudio customizado -->
+      <div class="px-5 py-3 border-b border-slate-800 bg-slate-950/40 flex-shrink-0">
+        <audio
+          x-ref="audio"
+          :src="`/api/jobs/${editor.jobId}/audio`"
+          @timeupdate="onAudioTimeUpdate"
+          @loadedmetadata="onAudioLoaded"
+          @play="player.playing = true"
+          @pause="player.playing = false"
+          @ended="player.playing = false"
+          @volumechange="player.volume = $refs.audio.volume; player.muted = $refs.audio.muted"
+          preload="metadata"
+          class="hidden"
+        ></audio>
+
+        <div class="bg-gradient-to-b from-slate-800/60 to-slate-900/60 border border-slate-700/40 rounded-xl p-3">
+          <!-- Linha 1: barra de progresso + tempos -->
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-xs font-mono text-slate-300 tabular-nums w-14 text-right" x-text="formatPlayerTime(player.currentTime)"></span>
+            <div
+              class="flex-1 h-2 bg-slate-700/60 rounded-full relative cursor-pointer group"
+              @click="seekToPosition($event)"
+              @mousemove="onSeekHover($event)"
+              @mouseleave="player.hoverTime = null"
+            >
+              <!-- Faixa do segmento ativo (highlight) -->
+              <template x-if="editor.activeIndex !== -1 && editor.segments[editor.activeIndex] && player.duration > 0">
+                <div
+                  class="absolute top-0 bottom-0 bg-brand-500/15 rounded-full pointer-events-none"
+                  :style="`left: ${(editor.segments[editor.activeIndex].start / player.duration) * 100}%; width: ${((editor.segments[editor.activeIndex].end - editor.segments[editor.activeIndex].start) / player.duration) * 100}%`"
+                ></div>
+              </template>
+              <!-- Progresso atual -->
+              <div
+                class="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-brand-600 to-brand-500 rounded-full transition-[width] duration-75 pointer-events-none"
+                :style="`width: ${player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}%`"
+              ></div>
+              <!-- Bolinha do scrubber -->
+              <div
+                class="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition"
+                :style="`left: calc(${player.duration > 0 ? (player.currentTime / player.duration) * 100 : 0}% - 7px)`"
+              ></div>
+              <!-- Tooltip de hover -->
+              <div
+                x-show="player.hoverTime !== null"
+                class="absolute bottom-full mb-2 -translate-x-1/2 bg-slate-900 border border-slate-700 px-2 py-0.5 rounded text-[10px] font-mono text-slate-200 pointer-events-none whitespace-nowrap"
+                :style="`left: ${player.hoverPercent}%`"
+                x-text="player.hoverTime !== null ? formatPlayerTime(player.hoverTime) : ''"
+              ></div>
+            </div>
+            <span class="text-xs font-mono text-slate-500 tabular-nums w-14" x-text="formatPlayerTime(player.duration)"></span>
+          </div>
+
+          <!-- Linha 2: controles -->
+          <div class="flex items-center justify-between gap-2">
+            <!-- Esquerda: skip e velocidade -->
+            <div class="flex items-center gap-1">
+              <button
+                @click="skipPlayer(-5)"
+                class="w-8 h-8 rounded-lg hover:bg-slate-700/60 text-slate-300 hover:text-white flex items-center justify-center transition"
+                title="Voltar 5s (←)"
+              >
+                <svg class="w-3.5 h-3.5"><use href="#i-skip-back"/></svg>
+              </button>
+              <button
+                @click="skipPlayer(5)"
+                class="w-8 h-8 rounded-lg hover:bg-slate-700/60 text-slate-300 hover:text-white flex items-center justify-center transition"
+                title="Avançar 5s (→)"
+              >
+                <svg class="w-3.5 h-3.5"><use href="#i-skip-forward"/></svg>
+              </button>
+
+              <div class="w-px h-5 bg-slate-700 mx-1"></div>
+
+              <div class="relative" x-data="{ open: false }">
+                <button
+                  @click="open = !open"
+                  class="px-2 h-8 rounded-lg hover:bg-slate-700/60 text-slate-300 hover:text-white text-xs font-medium transition flex items-center gap-1"
+                  title="Velocidade"
+                >
+                  <span x-text="player.playbackRate + 'x'"></span>
+                  <svg class="w-3 h-3 opacity-60"><use href="#i-chevron-down"/></svg>
+                </button>
+                <div
+                  x-show="open"
+                  @click.outside="open = false"
+                  x-transition.opacity
+                  class="absolute bottom-full mb-1 left-0 bg-slate-900 border border-slate-700 rounded-lg shadow-xl py-1 min-w-[80px] z-10"
+                  style="display: none;"
+                >
+                  <template x-for="rate in [0.5, 0.75, 1, 1.25, 1.5, 2]" :key="rate">
+                    <button
+                      @click="setPlaybackRate(rate); open = false"
+                      :class="player.playbackRate === rate ? 'bg-brand-600/30 text-brand-300' : 'text-slate-300 hover:bg-slate-800'"
+                      class="w-full px-3 py-1.5 text-xs text-left transition"
+                      x-text="rate + 'x'"
+                    ></button>
+                  </template>
+                </div>
+              </div>
+
+              <div class="w-px h-5 bg-slate-700 mx-1"></div>
+
+              <button
+                @click="player.loop = !player.loop"
+                :class="player.loop ? 'bg-amber-500/20 text-amber-400' : 'hover:bg-slate-700/60 text-slate-300 hover:text-white'"
+                class="px-2 h-8 rounded-lg flex items-center gap-1 transition text-[10px] uppercase tracking-wider font-semibold"
+                title="Loop do segmento ativo"
+              >
+                <svg class="w-3.5 h-3.5"><use href="#i-loop"/></svg>
+                <span class="hidden sm:inline">Loop</span>
+              </button>
+            </div>
+
+            <!-- Centro: play/pause -->
+            <button
+              @click="togglePlay()"
+              class="w-11 h-11 rounded-full bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center transition shadow-lg shadow-brand-600/30"
+              :title="player.playing ? 'Pausar (Espaço)' : 'Tocar (Espaço)'"
+            >
+              <template x-if="!player.playing">
+                <svg class="w-4 h-4 ml-0.5"><use href="#i-play"/></svg>
+              </template>
+              <template x-if="player.playing">
+                <svg class="w-4 h-4"><use href="#i-pause"/></svg>
+              </template>
+            </button>
+
+            <!-- Direita: volume -->
+            <div class="flex items-center gap-1.5 group/volume">
+              <button
+                @click="toggleMute()"
+                class="w-8 h-8 rounded-lg hover:bg-slate-700/60 text-slate-300 hover:text-white flex items-center justify-center transition"
+                :title="player.muted ? 'Desmutar' : 'Mutar (M)'"
+              >
+                <template x-if="player.muted || player.volume === 0">
+                  <svg class="w-3.5 h-3.5"><use href="#i-volume-x"/></svg>
+                </template>
+                <template x-if="!player.muted && player.volume > 0 && player.volume < 0.5">
+                  <svg class="w-3.5 h-3.5"><use href="#i-volume-1"/></svg>
+                </template>
+                <template x-if="!player.muted && player.volume >= 0.5">
+                  <svg class="w-3.5 h-3.5"><use href="#i-volume-2"/></svg>
+                </template>
+              </button>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                :value="player.muted ? 0 : player.volume"
+                @input="setVolume(parseFloat($event.target.value))"
+                class="w-20 sm:w-24 accent-brand-500 h-1 cursor-pointer"
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de segmentos editáveis -->
+      <div class="flex-1 overflow-y-auto px-5 py-4">
+        <template x-if="editor.segments.length === 0">
+          <p class="text-sm text-slate-400 text-center py-8">Nenhum segmento.</p>
+        </template>
+
+        <ul class="space-y-2">
+          <template x-for="(seg, idx) in editor.segments" :key="idx">
+            <li
+              :class="editor.activeIndex === idx ? 'bg-brand-600/15 border-brand-600/40' : 'bg-slate-800/40 border-slate-800 hover:border-slate-700'"
+              class="border rounded-lg p-3 transition"
+            >
+              <div class="flex items-start gap-3">
+                <!-- Botão play do segmento -->
+                <button
+                  @click="playSegment(idx)"
+                  class="w-9 h-9 rounded-lg bg-brand-600 hover:bg-brand-500 text-white flex items-center justify-center flex-shrink-0 transition"
+                  title="Tocar este trecho"
+                >
+                  <svg class="w-3.5 h-3.5"><use href="#i-play"/></svg>
+                </button>
+
+                <div class="flex-1 min-w-0">
+                  <!-- Timestamps editáveis -->
+                  <div class="flex items-center gap-2 mb-2">
+                    <input
+                      type="text"
+                      :value="formatTime(seg.start)"
+                      @change="onTimestampEdit(idx, 'start', $event.target.value)"
+                      class="text-[11px] uppercase tracking-wider text-slate-400 font-mono bg-slate-900 border border-slate-800 rounded px-2 py-0.5 w-24 focus:outline-none focus:border-brand-500"
+                    >
+                    <span class="text-slate-500 text-xs">→</span>
+                    <input
+                      type="text"
+                      :value="formatTime(seg.end)"
+                      @change="onTimestampEdit(idx, 'end', $event.target.value)"
+                      class="text-[11px] uppercase tracking-wider text-slate-400 font-mono bg-slate-900 border border-slate-800 rounded px-2 py-0.5 w-24 focus:outline-none focus:border-brand-500"
+                    >
+                    <span class="text-[11px] text-slate-500" x-text="`(${(seg.end - seg.start).toFixed(2)}s)`"></span>
+                    <span class="text-[11px] text-slate-500 ml-auto" x-text="`#${idx + 1}`"></span>
+                  </div>
+
+                  <!-- Texto editável -->
+                  <textarea
+                    :value="seg.text"
+                    @input="onTextEdit(idx, $event.target.value)"
+                    rows="2"
+                    class="w-full bg-slate-900 border border-slate-800 rounded px-3 py-2 text-sm text-slate-100 leading-relaxed focus:outline-none focus:border-brand-500 resize-none"
+                  ></textarea>
+                </div>
+
+                <!-- Ações do segmento -->
+                <div class="flex flex-col gap-1 flex-shrink-0">
+                  <button
+                    @click="splitSegment(idx)"
+                    class="text-slate-500 hover:text-brand-400 p-1 rounded hover:bg-slate-700 transition"
+                    title="Dividir em duas legendas"
+                  >
+                    <svg class="w-3.5 h-3.5"><use href="#i-split"/></svg>
+                  </button>
+                  <button
+                    @click="mergeSegment(idx)"
+                    :disabled="idx === editor.segments.length - 1"
+                    class="text-slate-500 hover:text-brand-400 p-1 rounded hover:bg-slate-700 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Juntar com a próxima"
+                  >
+                    <svg class="w-3.5 h-3.5"><use href="#i-merge"/></svg>
+                  </button>
+                  <button
+                    @click="removeSegment(idx)"
+                    class="text-slate-500 hover:text-red-400 p-1 rounded hover:bg-slate-700 transition"
+                    title="Apagar"
+                  >
+                    <svg class="w-3.5 h-3.5"><use href="#i-trash"/></svg>
+                  </button>
+                </div>
+              </div>
+            </li>
+          </template>
+        </ul>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-5 py-3 border-t border-slate-800 bg-slate-900/50 flex items-center justify-between text-xs text-slate-400 flex-shrink-0">
+        <div class="flex items-center gap-3 flex-wrap">
+          <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">Espaço</kbd> play/pause</span>
+          <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">←/→</kbd> ±5s</span>
+          <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">M</kbd> mudo</span>
+          <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">L</kbd> loop</span>
+          <span class="flex items-center gap-1"><kbd class="px-1.5 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">Ctrl+S</kbd> salvar</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <a :href="`/api/jobs/${editor.jobId}/download/srt`" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5">
+            <svg class="w-3.5 h-3.5"><use href="#i-download"/></svg>
+            <span>Baixar SRT atualizado</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Preview -->
+  <div
+    x-show="preview.open"
+    x-transition.opacity
+    class="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4"
+    @click.self="preview.open = false"
+    style="display: none;"
+  >
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-3xl w-full max-h-[85vh] flex flex-col shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-semibold">Visualização da legenda</h3>
+          <p class="text-xs text-slate-400" x-text="preview.title"></p>
+        </div>
+        <button @click="preview.open = false" class="text-slate-400 hover:text-white p-1">
+          <svg class="w-5 h-5"><use href="#i-x"/></svg>
+        </button>
+      </div>
+      <div class="flex-1 overflow-y-auto px-6 py-4">
+        <template x-if="preview.loading">
+          <p class="text-sm text-slate-400">Carregando...</p>
+        </template>
+        <template x-if="!preview.loading && preview.segments.length === 0">
+          <p class="text-sm text-slate-400">Nenhum segmento encontrado.</p>
+        </template>
+        <ul class="space-y-3">
+          <template x-for="(seg, idx) in preview.segments" :key="idx">
+            <li class="bg-slate-800/40 border border-slate-800 rounded-lg p-3">
+              <div class="text-[10px] uppercase tracking-wider text-slate-500 font-mono mb-1">
+                <span x-text="formatTime(seg.start)"></span> → <span x-text="formatTime(seg.end)"></span>
+              </div>
+              <p class="text-sm text-slate-100 leading-relaxed" x-text="seg.text"></p>
+            </li>
+          </template>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
