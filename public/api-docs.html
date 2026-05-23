@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>API · Painel de Transcrição</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  '#eff6ff', 100: '#dbeafe', 500: '#3b82f6',
+              600: '#2563eb', 700: '#1d4ed8', 900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script defer src="https://unpkg.com/alpinejs@3.14.1/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .method-get    { color: #34d399; background: rgba(52, 211, 153, 0.1); }
+    .method-post   { color: #60a5fa; background: rgba(96, 165, 250, 0.1); }
+    .method-put    { color: #fbbf24; background: rgba(251, 191, 36, 0.1); }
+    .method-delete { color: #f87171; background: rgba(248, 113, 113, 0.1); }
+
+    pre { font-family: 'Fira Code', 'Consolas', 'Courier New', monospace; }
+    code { font-family: 'Fira Code', 'Consolas', 'Courier New', monospace; }
+
+    .anchor-link {
+      scroll-margin-top: 80px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen" x-data="apiDocs()">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-20">
+    <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="/" class="flex items-center gap-3 hover:opacity-80 transition">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-xl">🎙</div>
+          <div>
+            <h1 class="text-lg font-semibold tracking-tight">API · Painel de Transcrição</h1>
+            <p class="text-xs text-slate-400">Documentação interativa · use para automatizar pipelines</p>
+          </div>
+        </a>
+      </div>
+      <div class="flex items-center gap-3">
+        <a href="/" class="text-sm text-slate-300 hover:text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition">
+          ← Voltar ao painel
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6 py-8 grid lg:grid-cols-12 gap-6">
+
+    <!-- Sumário lateral -->
+    <aside class="lg:col-span-3 lg:sticky lg:top-24 lg:self-start">
+      <nav class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <p class="text-xs uppercase tracking-wider text-slate-400 font-semibold mb-3">Navegação</p>
+        <ul class="space-y-1 text-sm">
+          <li><a href="#intro" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Introdução</a></li>
+          <li><a href="#health" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Health Check</a></li>
+          <li><a href="#list" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Listar jobs</a></li>
+          <li><a href="#detail" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Detalhes do job</a></li>
+          <li><a href="#create" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Criar job</a></li>
+          <li><a href="#delete" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Apagar job</a></li>
+          <li><a href="#audio" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Streaming de áudio</a></li>
+          <li><a href="#segments" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Editar segmentos</a></li>
+          <li><a href="#regroup" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Reagrupar</a></li>
+          <li><a href="#postprocess" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Pós-processar</a></li>
+          <li><a href="#download" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Download</a></li>
+          <li><a href="#examples" class="block text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1 rounded transition">Exemplos completos</a></li>
+        </ul>
+      </nav>
+    </aside>
+
+    <!-- Conteúdo -->
+    <section class="lg:col-span-9 space-y-8">
+
+      <!-- INTRODUÇÃO -->
+      <article id="intro" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+          <h2 class="text-xl font-semibold mb-2">Introdução</h2>
+          <p class="text-sm text-slate-300 leading-relaxed mb-4">
+            Todas as rotas retornam <code class="bg-slate-800 px-1.5 py-0.5 rounded text-xs">application/json</code>.
+            A base URL local é <code class="bg-slate-800 px-1.5 py-0.5 rounded text-xs" x-text="baseUrl"></code>.
+            Não há autenticação por padrão — proteja por proxy reverso (Nginx) se expor para a internet.
+          </p>
+          <div class="bg-slate-950 border border-slate-800 rounded-lg p-4">
+            <p class="text-xs text-slate-400 mb-2">Status atual da sua instalação:</p>
+            <div class="flex items-center gap-4 text-sm flex-wrap">
+              <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full" :class="health.python_ok ? 'bg-emerald-400' : 'bg-red-400'"></span>
+                Python: <code class="text-xs" x-text="health.python_version || '...'"></code>
+              </span>
+              <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full" :class="health.whisperx_ok ? 'bg-emerald-400' : 'bg-red-400'"></span>
+                WhisperX
+              </span>
+              <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full" :class="health.ffmpeg_ok ? 'bg-emerald-400' : 'bg-red-400'"></span>
+                FFmpeg
+              </span>
+              <span class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full" :class="health.cuda_available ? 'bg-emerald-400' : 'bg-slate-500'"></span>
+                CUDA <span class="text-slate-500" x-text="health.cuda_available ? '(GPU)' : '(CPU only)'"></span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- HEALTH -->
+      <article id="health" class="anchor-link" x-data="endpoint('GET', '/api/health')">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-get">GET</span>
+              <code class="text-sm text-slate-200">/api/health</code>
+              <span class="text-xs text-slate-500">— Status do ambiente</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              Retorna informações sobre Python, WhisperX, PyTorch, FFmpeg e disponibilidade de CUDA.
+              Cache de 30 segundos. Use <code class="text-xs bg-slate-800 px-1 rounded">?force=1</code> para ignorar cache.
+            </p>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+              <div class="px-3 py-2 border-b border-slate-800 flex items-center justify-between">
+                <span class="text-xs text-slate-400">Resposta exemplo</span>
+                <button @click="copy(sampleResponse)" class="text-xs text-slate-400 hover:text-white" x-text="copyLabel">Copiar</button>
+              </div>
+              <pre class="p-4 text-xs text-slate-300 overflow-x-auto"><code>{
+  "ok": true,
+  "version": "1.0.0",
+  "python_ok": true,
+  "python_version": "Python 3.10.6",
+  "whisperx_ok": true,
+  "pytorch_ok": true,
+  "pytorch_version": "2.8.0+cpu",
+  "cuda_available": false,
+  "ffmpeg_ok": true,
+  "ffmpeg_version": "ffmpeg version 8.1.1..."
+}</code></pre>
+            </div>
+            <button @click="tryIt()" class="mt-3 text-xs bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg transition">
+              ▶ Testar agora
+            </button>
+            <pre x-show="result" class="mt-3 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-emerald-300 overflow-x-auto" x-text="result"></pre>
+          </div>
+        </div>
+      </article>
+
+      <!-- LIST JOBS -->
+      <article id="list" class="anchor-link" x-data="endpoint('GET', '/api/jobs')">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-get">GET</span>
+              <code class="text-sm text-slate-200">/api/jobs</code>
+              <span class="text-xs text-slate-500">— Listar todas as transcrições</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              Lista paginada de jobs ordenados do mais recente.
+            </p>
+            <div class="text-xs text-slate-400 mb-3">
+              <strong>Query params:</strong>
+              <code class="bg-slate-800 px-1 rounded">limit</code> (padrão 50, max 200) ·
+              <code class="bg-slate-800 px-1 rounded">offset</code> (padrão 0)
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+              <pre class="p-4 text-xs text-slate-300 overflow-x-auto"><code>{
+  "rows": [
+    {
+      "id": "NFwE8ikloWQO",
+      "title": "speech",
+      "audio_filename": "speech.wav",
+      "audio_size_bytes": 953298,
+      "mode": "transcribe",
+      "language": "hr",
+      "device": "cpu",
+      "model_size": "small",
+      "status": "done",
+      "duration_seconds": 21.85,
+      "detected_language": "hr",
+      "created_at": 1779568190767,
+      "finished_at": 1779568238042
+    }
+  ],
+  "total": 1
+}</code></pre>
+            </div>
+            <button @click="tryIt()" class="mt-3 text-xs bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 rounded-lg transition">▶ Testar agora</button>
+            <pre x-show="result" class="mt-3 bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-emerald-300 overflow-x-auto max-h-64" x-text="result"></pre>
+          </div>
+        </div>
+      </article>
+
+      <!-- DETAIL -->
+      <article id="detail" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-get">GET</span>
+              <code class="text-sm text-slate-200">/api/jobs/:id</code>
+              <span class="text-xs text-slate-500">— Detalhes de um job (inclui segmentos)</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              Retorna o objeto completo do job, incluindo o resultado da transcrição (segmentos com palavras e timestamps).
+            </p>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+              <pre class="p-4 text-xs text-slate-300 overflow-x-auto"><code>{
+  "id": "NFwE8ikloWQO",
+  "title": "speech",
+  "status": "done",
+  ...
+  "result": {
+    "language": "hr",
+    "segments": [
+      {
+        "start": 0.27,
+        "end": 11.0,
+        "text": "Te subote navečer, u skučenoj kuhinji...",
+        "words": [
+          { "start": 0.27, "end": 0.43, "word": "Te", "score": 0.85 },
+          ...
+        ]
+      }
+    ]
+  }
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- CREATE -->
+      <article id="create" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-post">POST</span>
+              <code class="text-sm text-slate-200">/api/jobs</code>
+              <span class="text-xs text-slate-500">— Criar nova transcrição</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              Envie como <code class="text-xs bg-slate-800 px-1 rounded">multipart/form-data</code>.
+              Resposta retorna <code class="text-xs bg-slate-800 px-1 rounded">id</code> imediatamente; o processamento ocorre em background.
+            </p>
+            <div class="text-xs text-slate-400 mb-3">
+              <p class="mb-1"><strong>Campos:</strong></p>
+              <ul class="list-disc list-inside space-y-0.5 text-slate-300">
+                <li><code class="bg-slate-800 px-1 rounded">audio</code> — arquivo (obrigatório)</li>
+                <li><code class="bg-slate-800 px-1 rounded">title</code> — título (opcional)</li>
+                <li><code class="bg-slate-800 px-1 rounded">mode</code> — <code>transcribe</code> ou <code>align</code></li>
+                <li><code class="bg-slate-800 px-1 rounded">language</code> — <code>pt</code>, <code>hr</code>, <code>en</code>, etc.</li>
+                <li><code class="bg-slate-800 px-1 rounded">device</code> — <code>cpu</code> ou <code>cuda</code></li>
+                <li><code class="bg-slate-800 px-1 rounded">model_size</code> — <code>tiny</code>, <code>base</code>, <code>small</code>, <code>medium</code>, <code>large-v2</code>, <code>large-v3</code></li>
+                <li><code class="bg-slate-800 px-1 rounded">compute_type</code> — opcional (auto-corrigido)</li>
+                <li><code class="bg-slate-800 px-1 rounded">reference_text</code> — obrigatório no modo <code>align</code></li>
+              </ul>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+              <div class="px-3 py-2 border-b border-slate-800 text-xs text-slate-400">curl</div>
+              <pre class="p-4 text-xs text-slate-300 overflow-x-auto"><code>curl -X POST http://localhost:9000/api/jobs \
+  -F "audio=@meu-audio.mp3" \
+  -F "title=Episodio 01" \
+  -F "mode=transcribe" \
+  -F "language=pt" \
+  -F "device=cpu" \
+  -F "model_size=small"</code></pre>
+            </div>
+            <p class="text-xs text-slate-400 mt-3 mb-2">Resposta:</p>
+            <pre class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs text-slate-300"><code>{ "id": "NFwE8ikloWQO", "status": "pending" }</code></pre>
+          </div>
+        </div>
+      </article>
+
+      <!-- DELETE -->
+      <article id="delete" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-delete">DELETE</span>
+              <code class="text-sm text-slate-200">/api/jobs/:id</code>
+              <span class="text-xs text-slate-500">— Apagar job e seus arquivos</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-2">
+              Remove o job do banco e apaga os arquivos físicos (áudio + saídas SRT/VTT/TXT/JSON).
+              Operação irreversível.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- AUDIO -->
+      <article id="audio" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-get">GET</span>
+              <code class="text-sm text-slate-200">/api/jobs/:id/audio</code>
+              <span class="text-xs text-slate-500">— Streaming do áudio original</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300">
+              Suporta <strong>Range requests</strong> para HTML5 audio. Use direto em <code class="text-xs bg-slate-800 px-1 rounded">&lt;audio src="..."&gt;</code>
+              ou em players customizados.
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- SEGMENTS -->
+      <article id="segments" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-put">PUT</span>
+              <code class="text-sm text-slate-200">/api/jobs/:id/segments</code>
+              <span class="text-xs text-slate-500">— Salvar edições manuais nos segmentos</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              Substitui todos os segmentos pelo array fornecido. Os arquivos SRT/VTT/TXT/JSON são regravados automaticamente.
+            </p>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+              <div class="px-3 py-2 border-b border-slate-800 text-xs text-slate-400">Body (application/json)</div>
+              <pre class="p-4 text-xs text-slate-300 overflow-x-auto"><code>{
+  "segments": [
+    { "start": 0.27, "end": 5.0,  "text": "Primeira fala...", "words": [] },
+    { "start": 5.0,  "end": 10.0, "text": "Segunda fala...",  "words": [] }
+  ]
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- REGROUP -->
+      <article id="regroup" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-post">POST</span>
+              <code class="text-sm text-slate-200">/api/jobs/:id/regroup</code>
+              <span class="text-xs text-slate-500">— Reagrupar palavras em legendas</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              Redistribui as palavras (mantendo timestamps) em segmentos seguindo regras configuráveis.
+              Útil para ajustar legendas ao padrão Netflix, TikTok, etc.
+            </p>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+              <div class="px-3 py-2 border-b border-slate-800 text-xs text-slate-400">Body (application/json)</div>
+              <pre class="p-4 text-xs text-slate-300 overflow-x-auto"><code>{
+  "max_chars_per_line": 42,
+  "max_lines_per_segment": 2,
+  "max_duration_seconds": 7,
+  "min_duration_seconds": 1.0,
+  "break_on_punctuation": true,
+  "merge_short_segments": true,
+  "min_words_per_segment": 2
+}</code></pre>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">
+              <strong>Presets prontos:</strong>
+              Netflix (42×2), TikTok (25×1)
+            </p>
+          </div>
+        </div>
+      </article>
+
+      <!-- POSTPROCESS -->
+      <article id="postprocess" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-post">POST</span>
+              <code class="text-sm text-slate-200">/api/jobs/:id/postprocess</code>
+              <span class="text-xs text-slate-500">— Pós-processamento do texto</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              Aplica regras de limpeza no texto (capitalização, pontuação, disfluências).
+            </p>
+            <div class="bg-slate-950 border border-slate-800 rounded-lg overflow-hidden">
+              <div class="px-3 py-2 border-b border-slate-800 text-xs text-slate-400">Body (application/json)</div>
+              <pre class="p-4 text-xs text-slate-300 overflow-x-auto"><code>{
+  "language": "pt",
+  "capitalize_first_word": true,
+  "capitalize_after_period": true,
+  "fix_punctuation_spacing": true,
+  "collapse_spaces": true,
+  "remove_filler_words": false,
+  "add_period_at_end": false
+}</code></pre>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- DOWNLOAD -->
+      <article id="download" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <div class="flex items-center gap-3 flex-wrap">
+              <span class="text-xs font-mono font-bold px-2.5 py-1 rounded method-get">GET</span>
+              <code class="text-sm text-slate-200">/api/jobs/:id/download/:format</code>
+              <span class="text-xs text-slate-500">— Baixar legendas geradas</span>
+            </div>
+          </div>
+          <div class="px-6 py-4">
+            <p class="text-sm text-slate-300 mb-3">
+              <code class="text-xs bg-slate-800 px-1 rounded">:format</code> aceita: <code>srt</code>, <code>vtt</code>, <code>txt</code>, <code>json</code>.
+              Retorna o arquivo com header de download apropriado.
+            </p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <code class="bg-slate-800 px-2 py-1.5 rounded text-xs text-center">/download/srt</code>
+              <code class="bg-slate-800 px-2 py-1.5 rounded text-xs text-center">/download/vtt</code>
+              <code class="bg-slate-800 px-2 py-1.5 rounded text-xs text-center">/download/txt</code>
+              <code class="bg-slate-800 px-2 py-1.5 rounded text-xs text-center">/download/json</code>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- EXEMPLOS -->
+      <article id="examples" class="anchor-link">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          <div class="px-6 py-4 border-b border-slate-800">
+            <h2 class="text-lg font-semibold">Exemplos completos</h2>
+            <p class="text-xs text-slate-400 mt-1">Pipelines prontos para automatizar</p>
+          </div>
+          <div class="px-6 py-4 space-y-6">
+
+            <!-- Bash -->
+            <div>
+              <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
+                <span class="text-emerald-400">▸</span> Bash — pipeline completo (transcrever e baixar SRT)
+              </h3>
+              <pre class="bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs text-slate-300 overflow-x-auto"><code>BASE=http://localhost:9000
+
+# 1. Cria job e captura o ID
+JOB_ID=$(curl -s -X POST $BASE/api/jobs \
+  -F "audio=@audio.mp3" \
+  -F "language=pt" \
+  -F "mode=transcribe" \
+  -F "model_size=small" \
+  -F "device=cpu" | jq -r '.id')
+
+echo "Job criado: $JOB_ID"
+
+# 2. Aguarda processar (polling)
+while true; do
+  STATUS=$(curl -s $BASE/api/jobs/$JOB_ID | jq -r '.status')
+  echo "Status: $STATUS"
+  [ "$STATUS" = "done" ] && break
+  [ "$STATUS" = "error" ] && exit 1
+  sleep 5
+done
+
+# 3. Aplica reagrupamento estilo Netflix
+curl -s -X POST $BASE/api/jobs/$JOB_ID/regroup \
+  -H "Content-Type: application/json" \
+  -d '{"max_chars_per_line":42,"max_lines_per_segment":2}'
+
+# 4. Baixa SRT final
+curl -s -o legenda.srt $BASE/api/jobs/$JOB_ID/download/srt
+echo "Legenda salva em legenda.srt"</code></pre>
+            </div>
+
+            <!-- Node.js -->
+            <div>
+              <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
+                <span class="text-emerald-400">▸</span> Node.js — automação com axios
+              </h3>
+              <pre class="bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs text-slate-300 overflow-x-auto"><code>const axios = require('axios');
+const fs = require('node:fs');
+const FormData = require('form-data');
+
+const BASE = 'http://localhost:9000';
+
+async function transcribe(audioPath) {
+  const fd = new FormData();
+  fd.append('audio', fs.createReadStream(audioPath));
+  fd.append('language', 'hr');
+  fd.append('mode', 'transcribe');
+  fd.append('model_size', 'small');
+  fd.append('device', 'cpu');
+
+  const { data } = await axios.post(`${BASE}/api/jobs`, fd, {
+    headers: fd.getHeaders(),
+  });
+  const id = data.id;
+  console.log('Job:', id);
+
+  // polling
+  while (true) {
+    const job = (await axios.get(`${BASE}/api/jobs/${id}`)).data;
+    console.log('Status:', job.status, '-', job.progress_message || '');
+    if (job.status === 'done') {
+      const srt = await axios.get(`${BASE}/api/jobs/${id}/download/srt`,
+        { responseType: 'arraybuffer' });
+      fs.writeFileSync('output.srt', srt.data);
+      return id;
+    }
+    if (job.status === 'error') throw new Error(job.error_message);
+    await new Promise(r => setTimeout(r, 3000));
+  }
+}
+
+transcribe('./audio.mp3').then(console.log);</code></pre>
+            </div>
+
+            <!-- Python -->
+            <div>
+              <h3 class="text-sm font-semibold mb-2 flex items-center gap-2">
+                <span class="text-emerald-400">▸</span> Python — modo "alinhar" (TTS)
+              </h3>
+              <pre class="bg-slate-950 border border-slate-800 rounded-lg p-4 text-xs text-slate-300 overflow-x-auto"><code>import requests, time
+
+BASE = 'http://localhost:9000'
+
+with open('roteiro.txt', encoding='utf-8') as f:
+    roteiro = f.read()
+
+# Cria job em modo align (sincroniza texto exato com audio TTS)
+files = {'audio': open('tts-output.mp3', 'rb')}
+data = {
+    'mode': 'align',
+    'language': 'hr',
+    'reference_text': roteiro,
+    'device': 'cpu',
+}
+r = requests.post(f'{BASE}/api/jobs', files=files, data=data)
+job_id = r.json()['id']
+print(f'Job: {job_id}')
+
+# Polling
+while True:
+    job = requests.get(f'{BASE}/api/jobs/{job_id}').json()
+    print(f"Status: {job['status']} - {job.get('progress_message', '')}")
+    if job['status'] == 'done':
+        srt = requests.get(f'{BASE}/api/jobs/{job_id}/download/srt')
+        open('legenda.srt', 'wb').write(srt.content)
+        break
+    if job['status'] == 'error':
+        raise Exception(job['error_message'])
+    time.sleep(3)</code></pre>
+            </div>
+
+          </div>
+        </div>
+      </article>
+
+    </section>
+  </main>
+
+  <footer class="max-w-6xl mx-auto px-6 py-8 text-center text-xs text-slate-500">
+    <p>Painel de Transcrição (WhisperX) · API REST · <a href="/" class="text-brand-400 hover:underline">Voltar ao painel</a></p>
+  </footer>
+
+  <script>
+    function apiDocs() {
+      return {
+        baseUrl: window.location.origin,
+        health: {},
+        async init() {
+          try {
+            const r = await fetch('/api/health');
+            this.health = await r.json();
+          } catch (_) {}
+        }
+      };
+    }
+
+    function endpoint(method, path) {
+      return {
+        result: '',
+        copyLabel: 'Copiar',
+        sampleResponse: '',
+        async tryIt() {
+          this.result = 'Carregando...';
+          try {
+            const r = await fetch(window.location.origin + path);
+            const data = await r.json();
+            this.result = JSON.stringify(data, null, 2);
+          } catch (err) {
+            this.result = 'Erro: ' + err.message;
+          }
+        },
+        copy(text) {
+          navigator.clipboard.writeText(text);
+          this.copyLabel = 'Copiado!';
+          setTimeout(() => this.copyLabel = 'Copiar', 1500);
+        }
+      };
+    }
+  </script>
+</body>
+</html>
